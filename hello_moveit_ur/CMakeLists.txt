@@ -13,7 +13,7 @@ find_package(ur_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
 
 
-add_executable(hello_moveit_ur src/hello_moveit_ur.cpp src/cartesian_path_planner.cpp)
+add_executable(hello_moveit_ur src/hello_moveit_ur.cpp)
 target_include_directories(hello_moveit_ur PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

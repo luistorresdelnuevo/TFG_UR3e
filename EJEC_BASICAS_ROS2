@@ -73,5 +73,6 @@ Nos vamos a PC2 CLIENTE
 8)  ros2 launch robot_pieza_servidor robot_pieza_servidor_launch.py
 
 SI LA CONEXIÓN SE REALIZA CORRECTAMENTE DESCOMENTAR LÍNEAS COMENTADAS, PARA COMPROBAR QUE VERDADERAMENTE FUNCIONA EL INTERCAMBIO DE MOVIMIENTOS EN LOS ROBOTS.
+cuando esto funcione correctamente se realizará todo el código, este código es de prueba para ver si conecta.
 
 

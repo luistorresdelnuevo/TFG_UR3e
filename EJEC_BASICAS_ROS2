@@ -1,0 +1,77 @@
+
+
+//////////////////////////////////////////////PAQUETE QUE MUEVE EL ROBOT A UN PUNTO
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+ros2 launch hello_moveit_ur hello_moveit_ur_launch.py 
+
+
+
+//////////////////////////////////////////////SERVICIO QUE MUEVE PINZA
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 service call /io_and_status_controller/set_io ur_msgs/srv/setIO "f Y SE DA A TAB
+pin 16/17 para abrir y cerrar y state a 0 o a 1
+
+
+
+////////////////////////////////////PAQUETE QUE MUEVE EL ROBOT CON FAKE_HW_MANAGER
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=yyy.yyy.yyy.yyy use_fake_hardware:=true launch_rviz:=false
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=yyy.yyy.yyy.yyy use_fake_hardware:=true launch_rviz:=true
+
+
+/////////////////////////////////////Paquete dual robots CON WIFI
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.10.119 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.10.119 launch_rviz:=true
+ros2 launch  hello_moveit_ur hello_moveit_ur_launch.py robot_ip:=192.168.10.119
+
+
+
+
+
+//////////////******************* INSTRUCCIONES ROBOT1 *******************//////////////////////
+
+
+
+Seguir misma configuración que si fuese ROBOT1, sin realizar el último paso.
+Dentro del paquete hello_moveit_ur en src/hola están todos los códigos que se han probado. Para probar, sobrescribir el de hello_moveit_ur.cpp y poner el que se vaya a probar
+
+
+
+
+
+//////////////******************* INSTRUCCIONES PARA DOBLE ROBOT   ******************///////////////////
+
+//CONFIGURACIÓN PREVIA
+
+ROBOT1 es el servidor. (Coger ordenador 1, enfrente mesa de profesor)
+En la tablet del robot, se asigna al robot una IP:=192.168.20.35  En el host IP:= 192.168.20.36  (Se conecta por cable)
+En el PC, crear un wired UR, en el que IPV4 Adress:=192.168.20.36  Netmask:=255.255.255.0 (la misma que al seleccionar la IP del robot.
+Este ordenador servidor la IP es 192.168.10.108, lo cambiamos en el código de cliente-servidor.robot1.cpp y robot2.cpp (ip se puede comprobar con ifconfig)
+
+ROBOT2 es el cliente. (Coger ordenador que tenga foxy)
+En la tablet del robot, se asigna al robot una IP:=192.168.20.35  En el host IP:= 192.168.20.36  (Se conecta por cable)
+En el PC, crear un wired UR, en el que IPV4 Adress:=192.168.20.36  Netmask:=255.255.255.0 (la misma que al seleccionar la IP del robot.
+Este ordenador cliente la IP lo cambiamos en el código de robot2.cpp,(solo la de cliente). (ip se puede comprobar con ifconfig)
+
+
+PASOS A SEGUIR
+PRIMERO TODO EN PC1 SERVIDOR
+1)  ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+2)  EXTERNAL CONTROL PLAY (ROBOT1)
+3)  ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+4)  ros2 launch robot_pieza_servidor robot_pieza_servidor_launch.py
+Nos vamos a PC2 CLIENTE
+5)  ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+6)  EXTERNAL CONTROL PLAY (ROBOT2)
+7)  ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+8)  ros2 launch robot_pieza_servidor robot_pieza_servidor_launch.py
+
+SI LA CONEXIÓN SE REALIZA CORRECTAMENTE DESCOMENTAR LÍNEAS COMENTADAS, PARA COMPROBAR QUE VERDADERAMENTE FUNCIONA EL INTERCAMBIO DE MOVIMIENTOS EN LOS ROBOTS.
+
+

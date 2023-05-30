@@ -13,7 +13,10 @@
 # limitations under the License.
 #
 # Author: Denis Stogl
+import os
 
+import yaml
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition, UnlessCondition
@@ -83,7 +86,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "description_file",
-            default_value="ur.urdf.xacro",
+            default_value="ur_arm1.urdf.xacro",
             description="URDF/XACRO description file with the robot.",
         )
     )

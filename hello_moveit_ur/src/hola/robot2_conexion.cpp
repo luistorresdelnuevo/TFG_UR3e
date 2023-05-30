@@ -20,25 +20,47 @@ bool pin1=false;//input
 int npaso=0;
 
 
-//THIS IS ROBOT1
+//THIS IS ROBOT2
 
 void callback(const ur_msgs::msg::IOStates::SharedPtr msg)
 {
   // Aquí puedes procesar los datos recibidos
   RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_in_states[1].state);//pIN QUE SE ACTIVA AL TERMINAR ROBOT2 Y PARA EMPEZAR
-  pin1=msg->digital_in_states[1].state;
+  pin1=int(msg->digital_in_states[1].state);
   //mIENTRAS ROBOT1 SE MUEVE MANDAMOS UN PONEMOS D0OUT PARA QUE SE RESETEE.
   RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_out_states[0].state);//CUANDO ACABA EL ROBOT1 SU TAREA MANDAMOS UN 1 A ROBOT2
-  pin0=msg->digital_out_states[0].state;
+  pin0=(msg->digital_out_states[0].state);
+
+  if(npaso==0 && pin1==true && pin0==false)
+  {
+    pthread_mutex_lock(&mutex);
+    npaso=0;
+  }
+  elseif(npaso==1 && pin1==false && pin0==true)
+  {
+    pthread_mutex_lock(&mutex);
+    npaso=1;
+  }
+  elseif(npaso==2 && pin1==false && pin0==true)
+  {
+    pthread_mutex_lock(&mutex);
+    npaso=3;
+  }
+  elseif(npaso==3 && pin1==false && pin0==true)
+  {
+    pthread_mutex_lock(&mutex);
+    npaso=4;
+  }
 }
 
 
-///Señal para funcionar robot2
-void SignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
+
+///Señal para funcionar robot1
+void SignalR1(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
 
  request->fun= 1; 
- request->pin= 0;
- request->state= 1; ///Se pone a 1 el pin 0 para que R1 FUNCIONE
+ request->pin= 1; 
+ request->state= 1; //Se pone a 1 el pin 1 para que R1 FUNCIONE 
   while (!client_ ->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
@@ -56,12 +78,11 @@ void SignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const
   }
 }
 
-
-void NoSignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
+void NoSignalR1(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
 
  request->fun= 1; 
- request->pin= 0;
- request->state= 0; ///Se pone a 1 el pin 0 para que R1 FUNCIONE
+ request->pin= 1; 
+ request->state= 0; //Se pone a 0 el pin 1 para que R1 NO FUNCIONE 
   while (!client_ ->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
@@ -78,9 +99,6 @@ void NoSignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto con
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call serviece");
   }
 }
-
-
-
 
 
 
@@ -112,6 +130,7 @@ auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
 moveit::planning_interface::MoveGroupInterface::Plan my_plan_arm;
 
 
+
 //POSICIONES
 //pos1
 auto const target_pose1 = []{
@@ -134,83 +153,87 @@ auto const target_pose1 = []{
 
 
 
-SignalR2(client_,node);
+SignalR1(client_,node);
 //LOGICA DE MOVMIENTO
 if(npaso==0 && pin1==true && pin0==true)
 {
-  //Movimiento de R1 a HOME
-NoSignalR2(client_,node);//pone pin0 a 0
+  //Movimiento de R2 a HOME
+NoSignalR1(client_,node);//pone pin1 a 0
 move_group_interface.setPlannerId("ESTkConfigDefault");
 move_group_interface.setPoseReferenceFrame("base");
 move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
 bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 move_group_interface.move();
 
-
-
+//Señal a R1
+SignalR1(client_,node);//pone pin1 a true
 npaso++;
+NoSignalR1(client_,node);//pone pin1 a 0
 }
 
 
-if(npaso==1 && pin1==true && pin0==false)
+if(npaso==1 && pin1==false && pin0==true)
 {
-  //Movimiento a pieza de R1 A PIEZA y abrir pinza
-move_group_interface.setPoseTarget(target_pose1);
-success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-move_group_interface.move();
+//Movimiento de pieza a intercambio y abrir pinza
 
-
-SignalR2(client_,node);//Pone pin0 a true
+SignalR1(client_,node);
 npaso++;
-NoSignalR2(client_,node);//pone pin0 a 0
+NoSignalR1(client_,node);//pone pin1 a 0
 };
 
-if(npaso==2 && pin1==true && pin0==false)
+if(npaso==2 && pin1==false && pin0==true)
 {
 //Movimiento a intercambio
 
-
-SignalR2(client_,node);
+SignalR1(client_,node);
 npaso++;
-NoSignalR2(client_,node);//pone pin0 a 0
+NoSignalR1(client_,node);//pone pin1 a 0
 };
 
 
-if(npaso==3 && pin1==true && pin0==false)
+if(npaso==3 && pin1==false && pin0==true)
 {
+//Cerrar Gripper
 
-//Movimiento a intercambio
 
-
-SignalR2(client_,node);
+SignalR1(client_,node);
 npaso++;
-NoSignalR2(client_,node);//pone pin0 a 0
+NoSignalR1(client_,node);//pone pin1 a 0
 };
 
-if(npaso==4 && pin1==true && pin0==false)
+if(npaso==4 && pin1==false && pin0==true)
 {
-//Movimiento de Abrir Pinza
+//Colocar pieza en lugar correspondiente
 
 
-SignalR2(client_,node);
+SignalR1(client_,node);
 npaso++;
-NoSignalR2(client_,node);
+NoSignalR1(client_,node);//pone pin1 a 0
 };
 
-if(npaso==5 && pin1==true && pin0==false)
+
+if(npaso==5 && pin1==false && pin0==true)
 {
-//Movimiento de a home
+//Movimiento a HOME.
 
 
-SignalR2(client_,node);
+SignalR1(client_,node);
 npaso++;
-NoSignalR2(client_,node);
+NoSignalR1(client_,node);//pone pin1 a 0
+
 };
 
 
+
+
+
+
+
+
+
+  rclcpp::spin(node);//Posible candidato a quitarlo.
   pthread_mutex_destroy(&mutex);
   // Shutdown ROS
-  rclcpp::spin(node);//Posible candidato a quitarlo.
   rclcpp::shutdown();
   return 0;
 }

@@ -11,6 +11,7 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(ur_msgs REQUIRED)
 find_package(moveit_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 
 add_executable(hello_moveit_ur src/hello_moveit_ur.cpp)
@@ -24,6 +25,7 @@ ament_target_dependencies(
   "rclcpp"
   "ur_msgs"
   "moveit_msgs"
+  "std_msgs"
 )
 
 install(TARGETS hello_moveit_ur

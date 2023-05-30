@@ -25,7 +25,7 @@ def get_robot_description():
             " ",
             PathJoinSubstitution([FindPackageShare("ur_description"), "urdf", "ur.urdf.xacro"]),
             " ",
-            "robot_ip:=192.168.58.34",
+            "robot_ip:=192.168.20.35",
             " ",
             "joint_limit_params:=",
             joint_limit_params,

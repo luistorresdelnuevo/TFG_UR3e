@@ -12,9 +12,12 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
+pthread_mutex_t mutex;
 
-int pin0=0;//output
-int pin1=0;//input
+bool pin0=false;//output
+bool pin1=false;//input
+
+int npaso=0;
 
 
 //THIS IS ROBOT1
@@ -23,27 +26,57 @@ void callback(const ur_msgs::msg::IOStates::SharedPtr msg)
 {
   // Aquí puedes procesar los datos recibidos
   RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_in_states[1].state);//pIN QUE SE ACTIVA AL TERMINAR ROBOT2 Y PARA EMPEZAR
-  pin1=int(msg->digital_in_states[1].state);
+  pin1=msg->digital_in_states[1].state;
   //mIENTRAS ROBOT1 SE MUEVE MANDAMOS UN PONEMOS D0OUT PARA QUE SE RESETEE.
-  //RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_out_states[0].state);//CUANDO ACABA EL ROBOT1 SU TAREA MANDAMOS UN 1 A ROBOT2
+  RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_out_states[0].state);//CUANDO ACABA EL ROBOT1 SU TAREA MANDAMOS UN 1 A ROBOT2
   pin0=msg->digital_out_states[0].state;
 }
 
 
-void func1(int argc,char *argv[])
-{
-  // Aquí puedes procesar los datos recibidos
-  rclcpp::init(argc,argv);
-  auto const node1 = std::make_shared<rclcpp::Node>(
-    "PADRIKE",
-    rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
-  );
-  ur_msgs::msg::IOStates::SharedPtr msg;
-  auto subscription = node1->create_subscription<ur_msgs::msg::IOStates>(
-    "/io_and_status_controller/io_states",  // Nombre del topic
-    10,callback  // Tamaño de la cola de mensajes// Función de callback
-  );
-  rclcpp::spin(node1);
+///Señal para funcionar robot2
+void SignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
+
+ request->fun= 1; 
+ request->pin= 0;
+ request->state= 1; ///Se pone a 1 el pin 0 para que R1 FUNCIONE
+  while (!client_ ->wait_for_service(1s)) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+    }
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+  }
+
+ auto result = client_ ->async_send_request(request);
+
+ if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Servicio de gripper funcionando");
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call serviece");
+  }
+}
+
+
+void NoSignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto const node){
+
+ request->fun= 1; 
+ request->pin= 0;
+ request->state= 0; ///Se pone a 1 el pin 0 para que R1 FUNCIONE
+  while (!client_ ->wait_for_service(1s)) {
+    if (!rclcpp::ok()) {
+      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+    }
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
+  }
+
+ auto result = client_ ->async_send_request(request);
+
+ if (rclcpp::spin_until_future_complete(node, result) == rclcpp::FutureReturnCode::SUCCESS)
+  {
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Servicio de gripper funcionando");
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call serviece");
+  }
 }
 
 
@@ -60,20 +93,23 @@ int main(int argc, char * argv[])
     rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
   );
 
+  auto subscription = node->create_subscription<ur_msgs::msg::IOStates>(
+    "/io_and_status_controller/io_states",  // Nombre del topic
+    10,callback  // Tamaño de la cola de mensajes// Función de callback
+  );
 
-
-  std::thread nodo1Thread(func1);
-  
-
+pthread_mutex_init(&mutex, NULL);
 
 //vARIABLE
-
-
-
-
 //CLIENTE PARA MANDAR UN 1 A ROBOT2
-rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_1 =node->create_client<ur_msgs::srv::SetIO>("/io_and_status_controller/set_io");
-auto request_1 = std::make_shared<ur_msgs::srv::SetIO::Request>();
+rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_ =node->create_client<ur_msgs::srv::SetIO>("/io_and_status_controller/set_io");          // CHANGE
+auto request = std::make_shared<ur_msgs::srv::SetIO::Request>();
+
+
+// Create the MoveIt MoveGroup Interface
+using moveit::planning_interface::MoveGroupInterface;
+auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
+moveit::planning_interface::MoveGroupInterface::Plan my_plan_arm;
 
 
 //POSICIONES
@@ -96,83 +132,85 @@ auto const target_pose1 = []{
   return msg;
 }();
 
-// Create the MoveIt MoveGroup Interface
-using moveit::planning_interface::MoveGroupInterface;
-auto move_group_interface = MoveGroupInterface(node, "ur_manipulator");
-moveit::planning_interface::MoveGroupInterface::Plan my_plan_arm;
+
+
+SignalR2(client_,node);
+//LOGICA DE MOVMIENTO
+if(npaso==0 && pin1==true && pin0==true)
+{
+  //Movimiento de R1 a HOME
+NoSignalR2(client_,node);//pone pin0 a 0
 move_group_interface.setPlannerId("ESTkConfigDefault");
 move_group_interface.setPoseReferenceFrame("base");
-
-  rclcpp::sleep_for(std::chrono::seconds(2));
-  std::cout<< std::endl <<pin1 << std::endl;
-  move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
+move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
 bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 move_group_interface.move();
 
 
 
-if(pin1==1 && pin0==0)
-{
-
-
-  //CARGAMOS EN EL PLAN LA POSICION INICIAL
-move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
-success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-
-//PONER A 0 D0OUT
- request_1->fun= 1; 
- request_1->pin= 0; //16 abrir y 17 cerrar
- request_1->state= 0; //Funciona por flanco
-
- while (!client_1->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-  }
-
- auto result_1 = client_1 ->async_send_request(request_1);
-
- if (rclcpp::spin_until_future_complete(node, result_1) == rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Servicio de gripper funcionando");
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call serviece");
-  }
-
-
-//Mover el ROBOT
-move_group_interface.move();
-
-
-//PONER A 1 EL ROBOT2, MANDAR UN D0OUT=1
- request_1->fun= 1; 
- request_1->pin= 0; //16 abrir y 17 cerrar
- request_1->state= 1; //Funciona por flanco
-
- while (!client_1 ->wait_for_service(1s)) {
-    if (!rclcpp::ok()) {
-      RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-  }
-
- result_1 = client_1 ->async_send_request(request_1);
-
- if (rclcpp::spin_until_future_complete(node, result_1) == rclcpp::FutureReturnCode::SUCCESS)
-  {
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Servicio de gripper funcionando");
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call serviece");
-  }
+npaso++;
 }
 
 
+if(npaso==1 && pin1==true && pin0==false)
+{
+  //Movimiento a pieza de R1 A PIEZA y abrir pinza
+move_group_interface.setPoseTarget(target_pose1);
+success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+move_group_interface.move();
 
 
-nodo1Thread.join();
+SignalR2(client_,node);//Pone pin0 a true
+npaso++;
+NoSignalR2(client_,node);//pone pin0 a 0
+};
+
+if(npaso==2 && pin1==true && pin0==false)
+{
+//Movimiento a intercambio
+
+
+SignalR2(client_,node);
+npaso++;
+NoSignalR2(client_,node);//pone pin0 a 0
+};
+
+
+if(npaso==3 && pin1==true && pin0==false)
+{
+
+//Movimiento a intercambio
+
+
+SignalR2(client_,node);
+npaso++;
+NoSignalR2(client_,node);//pone pin0 a 0
+};
+
+if(npaso==4 && pin1==true && pin0==false)
+{
+//Movimiento de Abrir Pinza
+
+
+SignalR2(client_,node);
+npaso++;
+NoSignalR2(client_,node);
+};
+
+if(npaso==5 && pin1==true && pin0==false)
+{
+//Movimiento de a home
+
+
+SignalR2(client_,node);
+npaso++;
+NoSignalR2(client_,node);
+};
+
+
+  pthread_mutex_destroy(&mutex);
   // Shutdown ROS
+  rclcpp::spin(node);//Posible candidato a quitarlo.
   rclcpp::shutdown();
   return 0;
 }

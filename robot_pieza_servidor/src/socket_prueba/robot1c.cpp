@@ -66,9 +66,7 @@ int main(int argc, char * argv[])
     unsigned int len;     /* length of client address */
     struct sockaddr_in servaddr, client; 
     
-    int  len_rx, len_tx;                    /* received and sent length, in bytes */
-    len_tx=0;
-    len_rx=0;
+    int  len_rx, len_tx = 0;                     /* received and sent length, in bytes */
     char buff_tx[BUF_SIZE] = "done";
     char buff_rx[BUF_SIZE];   /* buffers for reception  */
     
@@ -164,10 +162,51 @@ int main(int argc, char * argv[])
                 }            
             }  
         }                      
-    }
+    }    
 
-    close(sockfd);
-    close(connfd);
+
+
+
+// Escuchar por conexiones entrantes
+
+  std::cout << "Escuchando conexiones entrantes" << std::endl;
+  listen(serverSocket, 1);
+
+// Aceptar la conexión entrante
+    addr_size = sizeof(serverStorage);
+    newSocket = accept(serverSocket, (struct sockaddr*) &serverStorage, &addr_size);
+    std::cout << "Conexión establecida desde robot2" << std::endl;
+
+    switch(fork()) 
+    {
+      case -1:
+      perror("echo server");
+      return 1;
+      
+      case 0:
+      char buffer[1024];
+      recv(newSocket, buffer, 1024, 0);
+      std::string signal = buffer;
+
+      if (signal == "ready") 
+      {
+        std::cout << "Señal recibida de robot2: ready" << std::endl;
+
+        // Realizar las tareas de pick'n place de robot1
+          //move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
+          //bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+          //move_group_interface.move();
+
+        // Enviar señal de finalización a robot2
+        std::string finishSignal = "done";
+        send(newSocket, finishSignal.c_str(), finishSignal.length(), 0);
+        std::cout << "Señal enviada a robot2: done" << std::endl;
+      }
+    } /* switch */
+
+    close(newSocket);
+    close(serverSocket);
+    std::cout << "Fin del programa en robot1" << std::endl;
 
   // Shutdown ROS
   rclcpp::shutdown();

@@ -1,13 +1,11 @@
 #include <memory>
 #include<iostream>
-/*
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-*/
 #include <math.h>
-//#include <ur_msgs/srv/set_io.hpp>
+#include <ur_msgs/srv/set_io.hpp>
 #include <chrono>
 #include <cstdlib>
 #include <memory>

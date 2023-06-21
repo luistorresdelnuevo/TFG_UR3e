@@ -21,7 +21,7 @@ using namespace std::chrono_literals;
 //CREANDO UN CLIENTE PARA GRIPPER
 
 
-/*
+
 auto request = std::make_shared<ur_msgs::srv::SetIO::Request>();
  //Crea un cliente que llama al servicio 
 
@@ -163,7 +163,7 @@ void AbrirGripper(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto c
   pthread_mutex_unlock(&mutex);
 
 }
-*/
+
 
 
 void CambiarZPiezas(geometry_msgs::msg::Pose& pose){
@@ -395,7 +395,7 @@ for(int i=0;i<4;i++)
   if(i==0)
   {
     waypoints.clear();
-    //AbrirGripper(client_,node);
+    AbrirGripper(client_,node);
   }
   else if(i==1)
   {
@@ -418,7 +418,7 @@ for(int i=0;i<4;i++)
 
 
 //Abrimos Gripper
-//AbrirGripper(client_,node);
+AbrirGripper(client_,node);
 
 // Movemos a pos1 (justo encima de coger las piezas)
 move_group_interface.setPlannerId("RRTstarkConfigDefault"); //Cambiamos el planificador
@@ -435,7 +435,7 @@ move_group_interface.move();
 
 
 //Cerramos pinza
-//CerrarGripper(client_,node);
+CerrarGripper(client_,node);
 
 
 //Subimos rectos para no dar en los bordes
@@ -483,7 +483,7 @@ if(i==0)
     move_group_interface.setPoseTarget(posfin1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
-    //AbrirGripper(client_,node);
+    AbrirGripper(client_,node);
   }
   else if(i==1)
   {
@@ -492,7 +492,7 @@ if(i==0)
     move_group_interface.setPoseTarget(posfin1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
-    //AbrirGripper(client_,node);
+    AbrirGripper(client_,node);
   }
   else if(i==2)
   {
@@ -501,7 +501,7 @@ if(i==0)
     move_group_interface.setPoseTarget(posfin1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
-    //AbrirGripper(client_,node);
+    AbrirGripper(client_,node);
   }
   else if(i==3)
   {
@@ -510,7 +510,7 @@ if(i==0)
     move_group_interface.setPoseTarget(posfin1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
-    //AbrirGripper(client_,node);
+    AbrirGripper(client_,node);
   }
 
 
@@ -537,7 +537,7 @@ if(i==0)
   //MOVEMOS POSICION INICIAL
   move_group_interface.setPlannerId("PRMkConfigDefault");
   move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
-  bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
   move_group_interface.move();
 
 

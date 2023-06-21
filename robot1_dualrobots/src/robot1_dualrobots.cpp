@@ -22,6 +22,8 @@ pthread_mutex_t mutex;
 
 
 int npaso=0;
+int npieza=0;
+bool FinWhile=false;
 
 
 //THIS IS ROBOT1
@@ -260,7 +262,7 @@ void NoSignalR2(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_1, auto co
 
 //Funcion que cambia el movimiento de piezas progresivamente
 void CambiarZPiezas(geometry_msgs::msg::Pose& pose){
-  pose.position.z-=0.01;
+  pose.position.z-=0.021;
 }
 
 
@@ -271,7 +273,7 @@ int main(int argc, char * argv[])
   // Initialize ROS and create the Node
   rclcpp::init(argc, argv);
   auto const node = std::make_shared<rclcpp::Node>(
-    "hello_moveit_ur",
+    "robot1_dualrobots",
     rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)
   );
 
@@ -313,10 +315,11 @@ const double eef_step = 0.01;  // Tolerancia de error para los movimientos carte
 const double jump_threshold = 0.0;  // Umbral de salto permitido
 std::vector<geometry_msgs::msg::Pose> waypoints;
 std::vector<geometry_msgs::msg::Pose> waypoints2;
-double fraction,fraction1;
+double fraction,fraction2;
 waypoints.clear();//usar para limpiar el vector
 waypoints2.clear();
-
+const double eef_step2 = 0.01;  // Tolerancia de error para los movimientos cartesianos
+const double jump_threshold2 = 0.0;  // Umbral de salto permitido
 
 
 
@@ -343,8 +346,8 @@ auto const target_pose1 = []{
 
 
 //POSICIONES
-//pos2
-auto const target_pose2 = []{
+//pieza 1, siguiente pieza se va decrementando z 0,021
+auto target_pose2 = []{
   geometry_msgs::msg::Pose msg;
 
   float Rx=1.739;
@@ -358,118 +361,52 @@ auto const target_pose2 = []{
 
   msg.position.x = -0.242;  //BARRA ROJA
   msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
+  msg.position.z = 0.210;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
+//home
 
-
-//POSICIONES
+//POSICION INTERCAMBIO
 //pos3
 auto const target_pose3 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=1.739;
-  float Ry=2.650;
-  float Rz=0.055;
+  float Rx=0.419;
+  float Ry=-1.995;
+  float Rz=1.969;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
   msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.242;  //BARRA ROJA
-  msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = 0.000;  //BARRA ROJA
+  msg.position.y = -0.550;  //BARRA VERDE
+  msg.position.z = 0.300;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
 
-//POSICIONES
+//POSICION PARA REALIZAR CARTESIAN PATH DE RETIRADA
 //pos4
 auto const target_pose4 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=1.739;
-  float Ry=2.650;
-  float Rz=0.055;
+  float Rx=0.419;
+  float Ry=-1.995;
+  float Rz=1.969;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
   msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.242;  //BARRA ROJA
-  msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = 0.000;  //BARRA ROJA
+  msg.position.y = -0.500;  //BARRA VERDE
+  msg.position.z = 0.300;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
-
-
-
-//POSICIONES
-//pos5
-auto const target_pose5 = []{
-  geometry_msgs::msg::Pose msg;
-
-  float Rx=1.739;
-  float Ry=2.650;
-  float Rz=0.055;
-  float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
-  msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
-  msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
-  msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
-  msg.orientation.w = cos(m/2);  //0.383
-
-  msg.position.x = -0.242;  //BARRA ROJA
-  msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
-  return msg;
-}();
-
-
-
-//POSICIONES
-//pos6
-auto const target_pose6 = []{
-  geometry_msgs::msg::Pose msg;
-
-  float Rx=1.739;
-  float Ry=2.650;
-  float Rz=0.055;
-  float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
-  msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
-  msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
-  msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
-  msg.orientation.w = cos(m/2);  //0.383
-
-  msg.position.x = -0.242;  //BARRA ROJA
-  msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
-  return msg;
-}();
-
-
-//POSICIONES
-//pos7
-auto const target_pose7 = []{
-  geometry_msgs::msg::Pose msg;
-
-  float Rx=1.739;
-  float Ry=2.650;
-  float Rz=0.055;
-  float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
-  msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
-  msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
-  msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
-  msg.orientation.w = cos(m/2);  //0.383
-
-  msg.position.x = -0.242;  //BARRA ROJA
-  msg.position.y = -0.128;  //BARRA VERDE
-  msg.position.z = 0.410;  //arriba, abajo   BARRA-AZUL
-  return msg;
-}();
-
 
 if(npaso==0)
   {
@@ -479,10 +416,8 @@ if(npaso==0)
 
 //LOGICA DE MOVMIENTO
 
-while(1)
+while(FinWhile!=true)
 {
-
-
  if(npaso==0 && odom_subs_node->getPin1()==true && odom_subs_node->getPin0()==true)
  {
   //Movimiento de R1 a HOME
@@ -499,16 +434,58 @@ while(1)
  }
 
 
-
  else if(npaso==1 && odom_subs_node->getPin1()==true)
  {
   //Movimiento a pieza de R1 A PIEZA
-  NoSignalR2(client_1,node);//pone pin0 a 0
+   NoSignalR2(client_1,node);//pone pin0 a 0
    move_group_interface.setPoseTarget(target_pose1);
    bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
    move_group_interface.move();
-  //Cerrar Gripper
-  CerrarGripper(client_gripper,node);
+
+
+   move_group_interface.setPoseTarget(target_pose2);
+   success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+   move_group_interface.move();
+
+   //Cerrar Gripper
+   CerrarGripper(client_gripper,node);
+
+   //Contador de PIEZA
+   npieza++;
+  
+
+  waypoints.push_back(target_pose2);
+  waypoints.push_back(target_pose1);
+
+
+
+  moveit_msgs::msg::RobotTrajectory trajectory; //Almacena trayectoria
+  my_plan_arm.trajectory_=trajectory;
+
+
+  fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
+  my_plan_arm.trajectory_=trajectory;
+
+  if (fraction == 1.0)
+  {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory.joint_trajectory.points.size() << std::endl;
+        success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory);
+  }
+  else
+  {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+        FinWhile=true;
+
+  }
 
 
 
@@ -527,13 +504,40 @@ while(1)
  else if(npaso==2 && odom_subs_node->getPin1()==true)
  {
   NoSignalR2(client_1,node);//pone pin0 a 0
-   move_group_interface.setPlannerId("PRMkConfigDefault");
-   move_group_interface.setPoseReferenceFrame("base");
-   move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
-   bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-   move_group_interface.move();
+  
+  AbrirGripper(client_gripper,node);
 
-  //Mover a intercambio
+  waypoints2.push_back(target_pose3);
+  waypoints2.push_back(target_pose4);
+
+
+
+moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+my_plan_arm.trajectory_=trajectory2;
+
+
+fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+my_plan_arm.trajectory_=trajectory2;
+
+    if (fraction2 == 1.0)
+    {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory2);
+    }
+    else
+    {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction2<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+        FinWhile=true;
+    }
 
 
    do{
@@ -550,10 +554,10 @@ while(1)
  else if(npaso==3 && odom_subs_node->getPin1()==true)
  {
   NoSignalR2(client_1,node);//pone pin0 a 0
-  //Abrir Gripper.
-   move_group_interface.setPoseTarget(target_pose1);
-   bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-   move_group_interface.move();
+  move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
+  bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  move_group_interface.move();
+
 
   do{
     SignalR2(client_1,node);
@@ -569,11 +573,18 @@ while(1)
  else if(npaso==4 && odom_subs_node->getPin1()==true)
  {
    NoSignalR2(client_1,node);//pone pin0 a 0
-   move_group_interface.setPlannerId("PRMkConfigDefault");
-   move_group_interface.setPoseReferenceFrame("base");
-   move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
-   bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-   move_group_interface.move();
+
+   if (npieza<5)
+   {
+    CambiarZPiezas(target_pose2);
+    waypoints.clear();
+    waypoints2.clear();
+    npaso=-1;
+   }
+   else
+   {
+      FinWhile=true;
+   }
 
 
   //Resetear valores
@@ -586,26 +597,6 @@ while(1)
 
    npaso++;
  }
-
-
-
- else if(npaso==5 && odom_subs_node->getPin1()==true)
- {
-  NoSignalR2(client_1,node);//pone pin0 a 0
-  //Movimiento de a home
-   move_group_interface.setPoseTarget(target_pose1);
-   bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-   move_group_interface.move();
-
-  do{
-    SignalR2(client_1,node);
-  }while(odom_subs_node->getPin1()!=false);
-
-  std::this_thread::sleep_for(std::chrono::seconds(2));//espera durante dos segundos
-
-   npaso++;
- };
-
 }
 
 

@@ -69,10 +69,47 @@ PRIMERO TODO EN PC1 SERVIDOR
 Nos vamos a PC2 CLIENTE
 5)  ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
 6)  EXTERNAL CONTROL PLAY (ROBOT2)
-7)  ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+7)  ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35
+
+
+
+
+ launch_rviz:=true
 8)  ros2 launch robot_pieza_servidor robot_pieza_servidor_launch.py
 
 SI LA CONEXIÓN SE REALIZA CORRECTAMENTE DESCOMENTAR LÍNEAS COMENTADAS, PARA COMPROBAR QUE VERDADERAMENTE FUNCIONA EL INTERCAMBIO DE MOVIMIENTOS EN LOS ROBOTS.
-cuando esto funcione correctamente se realizará todo el código, este código es de prueba para ver si conecta.
+
+
+
+********************************* ROBOT EJERCICIO 1 *************************
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+ros2 launch pick_and_place_piezas pick_and_place_piezas.launch.py
+
+
+
+
+
+
+********************************* ROBOT 1 EJERCICIO 2 ************************* ORDENADOR DE ALLÍ
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.58.34 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.58.34 launch_rviz:=true
+ros2 launch robot1_dualrobots robot1_dualrobots.launch.py
+
+
+
+********************************* ROBOT 2 EJERCICIO 2 ************************* ORDENA PROPIO
+ros2 launch ur_bringup ur_control.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=false initial_joint_controller:=joint_trajectory_controller
+EXTERNAL CONTROL PLAY
+ros2 launch ur_bringup ur_moveit.launch.py ur_type:=ur3e robot_ip:=192.168.20.35 launch_rviz:=true
+ros2 launch robot2_dualrobots robot2_dualrobots.launch.py
+
+
+
+
+
+
 
 

@@ -57,16 +57,16 @@ public:
 
 private:
   void callback(const ur_msgs::msg::IOStates::SharedPtr msg){
-  // Aquí puedes procesar los datos recibidos
-  RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_in_states[0].state);//pIN QUE SE ACTIVA AL TERMINAR ROBOT2 Y PARA EMPEZAR
-  pin0=int(msg->digital_in_states[0].state);
-  //mIENTRAS ROBOT1 SE MUEVE MANDAMOS UN PONEMOS D0OUT PARA QUE SE RESETEE.
-  RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_out_states[1].state);//CUANDO ACABA EL ROBOT1 SU TAREA MANDAMOS UN 1 A ROBOT2
-  pin1=(msg->digital_out_states[1].state);
+    // Aquí puedes procesar los datos recibidos
+    RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_in_states[0].state);//pIN QUE SE ACTIVA AL TERMINAR ROBOT2 Y PARA EMPEZAR
+    pin0=(msg->digital_in_states[0].state);
+    //mIENTRAS ROBOT1 SE MUEVE MANDAMOS UN PONEMOS D0OUT PARA QUE SE RESETEE.
+    RCLCPP_INFO(rclcpp::get_logger("subscriber_node"), "Mensaje recibido: %d", msg->digital_out_states[1].state);//CUANDO ACABA EL ROBOT1 SU TAREA MANDAMOS UN 1 A ROBOT2
+    pin1=(msg->digital_out_states[1].state);
 
-  std::cout<<std::endl<<npaso<<std::endl;
-  std::cout<<pin0<<std::endl;
-  std::cout<<pin1<<std::endl;
+    std::cout<<std::endl<<npaso<<std::endl;
+    std::cout<<pin0<<std::endl;
+    std::cout<<pin1<<std::endl;
 
 }
   rclcpp::Subscription<ur_msgs::msg::IOStates>::SharedPtr subscription_;
@@ -224,13 +224,6 @@ if (rclcpp::spin_until_future_complete(node, result_gripper) == rclcpp::FutureRe
 
 
 
-
-
-
-
-
-
-
 ///Señal para funcionar robot1
 void SignalR1(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_1, auto const node){
 
@@ -280,8 +273,8 @@ void NoSignalR1(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_1, auto co
 
 
 //Funcion que cambia el movimiento de piezas progresivamente
-void CambiarXPiezas(geometry_msgs::msg::Pose& pose){
-  pose.position.z+=0,04;
+void CambiarZPiezas(geometry_msgs::msg::Pose& pose){
+  pose.position.z+=0,015;
 }
 
 
@@ -347,13 +340,16 @@ waypoints2.clear();
 const double eef_step2 = 0.01;  // Tolerancia de error para los movimientos cartesianos
 const double jump_threshold2 = 0.0;  // Umbral de salto permitido
 
+NoSignalR1(client_1,node);
+
 //POSICIONES
  //pos1
- auto const target_pose1 = []{
+
+  auto const target_pose0 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=1.701;
-  float Ry=-2.641;
+  float Rx=1.742;
+  float Ry=2.614;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -361,9 +357,30 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.359;  //BARRA ROJA
-  msg.position.y = -0.144;  //BARRA VERDE
-  msg.position.z = 0.475;  //arriba, abajo   BARRA-AZUL
+ msg.position.x = -0.245;  //BARRA ROJA
+  msg.position.y = -0.135;  //BARRA VERDE
+  msg.position.z = 0.400;  //arriba, abajo   BARRA-AZUL
+  return msg;
+ }();
+
+
+
+
+ auto const target_pose1 = []{
+  geometry_msgs::msg::Pose msg;
+
+  float Rx=1.740;
+  float Ry=2.618;
+  float Rz=0.000;
+  float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
+  msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
+  msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
+  msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
+  msg.orientation.w = cos(m/2);  //0.383
+
+  msg.position.x = -0.419;  //BARRA ROJA
+  msg.position.y = -0.180;  //BARRA VERDE
+  msg.position.z = 0.300;  //arriba, abajo   BARRA-AZUL
   return msg;
  }();
 
@@ -373,8 +390,8 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
  auto const target_pose2 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=1.701;
-  float Ry=-2.641;
+  float Rx=1.740;
+  float Ry=2.618;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -382,9 +399,9 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.359;  //BARRA ROJA
-  msg.position.y = -0.144;  //BARRA VERDE
-  msg.position.z = 0.430;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.419;  //BARRA ROJA
+  msg.position.y = -0.180;  //BARRA VERDE
+  msg.position.z = 0.140;  //arriba, abajo   BARRA-AZUL
   return msg;
  }();
 
@@ -394,8 +411,8 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
  auto target_pose3 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=2.641;
-  float Ry=-1.701;
+  float Rx=1.740;
+  float Ry=2.618;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -403,9 +420,9 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.175;  //BARRA ROJA
-  msg.position.y = -0.423;  //BARRA VERDE
-  msg.position.z = 0.300;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.245;  //BARRA ROJA
+  msg.position.y = -0.025;  //BARRA VERDE
+  msg.position.z = 0.390;  //arriba, abajo   BARRA-AZUL
   return msg;
  }();
 
@@ -415,8 +432,9 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
  auto target_pose4 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=2.641;
-  float Ry=-1.701;
+
+  float Rx=1.740;
+  float Ry=2.618;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -424,9 +442,27 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.175;  //BARRA ROJA
-  msg.position.y = -0.423;  //BARRA VERDE
-  msg.position.z = 0.135;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.245;  //BARRA ROJA
+  msg.position.y = -0.025;  //BARRA VERDE
+  msg.position.z = 0.156;  //arriba, abajo   BARRA-AZUL
+  return msg;
+ }();
+
+  auto target_pose1_2 = []{
+  geometry_msgs::msg::Pose msg;
+
+  float Rx=1.740;
+  float Ry=2.618;
+  float Rz=0.000;
+  float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
+  msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
+  msg.orientation.y = (Ry/m) * sin(m/2);  //0.924
+  msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
+  msg.orientation.w = cos(m/2);  //0.383
+
+  msg.position.x = -0.252;  //BARRA ROJA
+  msg.position.y = -0.256;  //BARRA VERDE
+  msg.position.z = 0.208;  //arriba, abajo   BARRA-AZUL
   return msg;
  }();
 
@@ -434,7 +470,10 @@ const double jump_threshold2 = 0.0;  // Umbral de salto permitido
 
 if(npaso==0)
   {
+    do{
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     SignalR1(client_1,node);
+   }while(odom_subs_node->getPin0()!=true);
   }
 
 //executor2.spin();
@@ -444,6 +483,7 @@ while(FinWhile!=true)
   //std::cout<<"Perro"<<std::endl;
   if(npaso==0 && odom_subs_node->getPin1()==true && odom_subs_node->getPin0()==true)
   {
+  std::this_thread::sleep_for(std::chrono::seconds(1));
    NoSignalR1(client_1,node);//pone pin1 a 0
    move_group_interface.setPlannerId("PRMkConfigDefault");
    move_group_interface.setPoseReferenceFrame("base");
@@ -459,8 +499,9 @@ while(FinWhile!=true)
    //Senal a R1 , para que empiece su movimiento
    do{
     SignalR1(client_1,node);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
    }while(odom_subs_node->getPin0()==false);
-   
+
    npaso++;
   }
 
@@ -470,8 +511,13 @@ while(FinWhile!=true)
   {
    NoSignalR1(client_1,node);//pone pin1 a 0
     //Movimiento a intercambio y realizar cartesian path
-    move_group_interface.setPoseTarget(target_pose1);
+    move_group_interface.setPlannerId("PRMstarkConfigDefault");
+    move_group_interface.setPoseTarget(target_pose0);
     bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group_interface.move();
+
+    move_group_interface.setPoseTarget(target_pose1);
+    success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
 
 
@@ -515,9 +561,8 @@ while(FinWhile!=true)
 
    do{
     SignalR1(client_1,node);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
    }while(odom_subs_node->getPin0()!=false);
-   std::this_thread::sleep_for(std::chrono::seconds(2));//espera durante dos segundos
-
 
    npaso++;
   }
@@ -529,28 +574,25 @@ while(FinWhile!=true)
   {
    NoSignalR1(client_1,node);//pone pin1 a 0
 
-   move_group_interface.setPoseReferenceFrame("base");
+   move_group_interface.setPlannerId("PRMkConfigDefault");
+
    move_group_interface.setPoseTarget(target_pose3);
    bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
    move_group_interface.move();
+ 
 
-   move_group_interface.setPoseTarget(target_pose3);
-   success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-   move_group_interface.move();
-
-   AbrirGripper(client_gripper,node);
-
-   waypoints2.push_back(target_pose4);
    waypoints2.push_back(target_pose3);
+   waypoints2.push_back(target_pose4);
 
 
 
- moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
- my_plan_arm.trajectory_=trajectory2;
+   moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+   my_plan_arm.trajectory_=trajectory2;
 
 
- fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
- my_plan_arm.trajectory_=trajectory2;
+   fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+   my_plan_arm.trajectory_=trajectory2;
+   move_group_interface.setPlannerId("PRMkConfigDefault");
 
     if (fraction2 == 1.0)
     {
@@ -572,10 +614,14 @@ while(FinWhile!=true)
         FinWhile=true;
     }
 
+     AbrirGripper(client_gripper,node);
+
+     CambiarZPiezas(target_pose4);
+
    do{
     SignalR1(client_1,node);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
    }while(odom_subs_node->getPin0()!=false);
-   std::this_thread::sleep_for(std::chrono::seconds(2));//espera durante dos segundos
 
    npaso++;
   }
@@ -585,21 +631,40 @@ while(FinWhile!=true)
   {
    NoSignalR1(client_1,node);//pone pin1 a 0
 
-   
-   move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
+   move_group_interface.setPoseTarget(target_pose3);
    bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
    move_group_interface.move();
 
+   move_group_interface.setPoseTarget(target_pose1_2);
+   success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+   move_group_interface.move();
+
+   move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
+   success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+   move_group_interface.move();
 
 
-    do{
+   do{
     SignalR1(client_1,node);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
    }while(odom_subs_node->getPin0()!=false);
-   std::this_thread::sleep_for(std::chrono::seconds(2));//espera durante dos segundos
 
-   npaso++;
+   if (npieza<5)
+        {
+          //CambiarXPiezas(target_pose3);
+          //CambiarXPiezas(target_pose4);
+          waypoints.clear();
+          waypoints2.clear();
+          npaso=0;
+        }
+        else
+        {
+          FinWhile=true;
+        }
+
+   do{
+   }while(odom_subs_node->getPin0()==false);
   }
-
 
 
 
@@ -608,31 +673,27 @@ while(FinWhile!=true)
   else if(npaso==4 && odom_subs_node->getPin0()==true)
   {
     NoSignalR1(client_1,node);//pone pin1 a 0
+    do{
+        if (npieza<5)
+        {
+          //CambiarXPiezas(target_pose3);
+          //CambiarXPiezas(target_pose4);
+          waypoints.clear();
+          waypoints2.clear();
+          npaso=-1;
+        }
+        else
+        {
+          FinWhile=true;
+        }
 
 
-    if (npieza<5)
-   {
-    CambiarXPiezas(target_pose3);
-    CambiarXPiezas(target_pose4);
-    waypoints.clear();
-    waypoints2.clear();
-    npaso=-1;
-   }
-   else
-   {
-      FinWhile=true;
-   }
+    }while(odom_subs_node->getPin0()!=true);
+    
+    SignalR1(client_1,node);//pone pin1 a 0
 
-
-
-
-   //do{
-    SignalR1(client_1,node);
-   //}while(odom_subs_node->getPin0()!=false);
-   std::this_thread::sleep_for(std::chrono::seconds(2));//espera durante dos segundos
-
-    npaso++;
   }
+
  }
 
 

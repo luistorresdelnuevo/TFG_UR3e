@@ -167,8 +167,14 @@ void AbrirGripper(rclcpp::Client<ur_msgs::srv::SetIO>::SharedPtr client_, auto c
 
 
 void CambiarZPiezas(geometry_msgs::msg::Pose& pose){
-  pose.position.z-=0.021;
+  pose.position.z-=0.16;
 }
+
+
+void CambiarZPosicion(geometry_msgs::msg::Pose& pose){
+  pose.position.z=0.400;
+}
+
 
 
 
@@ -250,7 +256,7 @@ auto target_pose3 = []{
 }();
 
 
-//Pos4
+//PosIntermedia
 auto const target_pose4 = []{
   geometry_msgs::msg::Pose msg;
 
@@ -272,8 +278,9 @@ auto const target_pose4 = []{
 
 
 
+
 //posfin1
-auto const posfin1 = []{
+auto posfin1 = []{
   geometry_msgs::msg::Pose msg;
 
   float Rx=1.739;
@@ -285,21 +292,20 @@ auto const posfin1 = []{
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.165;  //BARRA ROJA
-  msg.position.y = -0.379;  //BARRA VERDE
-  msg.position.z = 0.152;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.118;  //BARRA ROJA
+  msg.position.y = -0.398;  //BARRA VERDE
+  msg.position.z = 0.143;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
 
 
-
 //Posfin2
-auto const posfin2 = []{
+auto posfin2 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=0.549;
-  float Ry=-3.093;
+  float Rx=1.739;
+  float Ry=2.167;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -307,20 +313,20 @@ auto const posfin2 = []{
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = 0.142;  //BARRA ROJA
-  msg.position.y = -0.429;  //BARRA VERDE
-  msg.position.z = 0.152;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.201;  //BARRA ROJA
+  msg.position.y = -0.398;  //BARRA VERDE
+  msg.position.z = 0.143;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
 
 
 //Posfin3
-auto const posfin3 = []{
+auto posfin3 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=2.635;
-  float Ry=-1.711;
+  float Rx=3.092;
+  float Ry=0.557;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -328,19 +334,19 @@ auto const posfin3 = []{
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = -0.090;  //BARRA ROJA
-  msg.position.y = -0.407;  //BARRA VERDE
-  msg.position.z = 0.152;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.151;  //BARRA ROJA
+  msg.position.y = -0.453;  //BARRA VERDE
+  msg.position.z = 0.143;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
 
 //Posfin4
-auto const posfin4 = []{
+auto posfin4 = []{
   geometry_msgs::msg::Pose msg;
 
-  float Rx=0.549;
-  float Ry=-3.093;
+  float Rx=3.092;
+  float Ry=0.557;
   float Rz=0.000;
   float m = sqrt(Rx*Rx + Ry*Ry + Rz*Rz);
   msg.orientation.x =  (Rx/m) *sin(m/2);  //0.924
@@ -348,9 +354,9 @@ auto const posfin4 = []{
   msg.orientation.z = (Rz/m) * sin(m/2);  //0.924
   msg.orientation.w = cos(m/2);  //0.383
 
-  msg.position.x = 0.142;  //BARRA ROJA
-  msg.position.y = -0.35;  //BARRA VERDE
-  msg.position.z = 0.152;  //arriba, abajo   BARRA-AZUL
+  msg.position.x = -0.151;  //BARRA ROJA
+  msg.position.y = -0.351;  //BARRA VERDE
+  msg.position.z = 0.143;  //arriba, abajo   BARRA-AZUL
   return msg;
 }();
 
@@ -370,7 +376,11 @@ move_group_interface.setPoseReferenceFrame("base");
 const double eef_step = 0.01;  // Tolerancia de error para los movimientos cartesianos
 const double jump_threshold = 0.0;  // Umbral de salto permitido
 std::vector<geometry_msgs::msg::Pose> waypoints;
+std::vector<geometry_msgs::msg::Pose> waypoints2;
 double fraction;
+double fraction2;
+const double eef_step2 = 0.01;  // Tolerancia de error para los movimientos cartesianos
+const double jump_threshold2 = 0.0;  // Umbral de salto permitido
 
 
 
@@ -421,14 +431,14 @@ for(int i=0;i<4;i++)
 AbrirGripper(client_,node);
 
 // Movemos a pos1 (justo encima de coger las piezas)
-move_group_interface.setPlannerId("RRTstarkConfigDefault"); //Cambiamos el planificador
+move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
 move_group_interface.setPoseTarget(target_pose1);
 success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 move_group_interface.move();
 
 
 //Bajamos a por pieza
-move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
+move_group_interface.setPlannerId("RRTstarkConfigDefault"); //Cambiamos el planificador
 move_group_interface.setPoseTarget(target_pose3);
 success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 move_group_interface.move();
@@ -445,7 +455,7 @@ waypoints.push_back(target_pose1);
 moveit_msgs::msg::RobotTrajectory trajectory; //Almacena trayectoria
 my_plan_arm.trajectory_=trajectory;
 
-
+move_group_interface.setPlannerId("RRTstarkConfigDefault");
 double fraction = move_group_interface.computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
 my_plan_arm.trajectory_=trajectory;
 
@@ -470,7 +480,7 @@ my_plan_arm.trajectory_=trajectory;
 
 
 //Colocar robot justo encima de donde va a suceder a dejarse la pieza
-move_group_interface.setPlannerId("RRTstarkConfigDefault"); //Cambiamos el planificador
+move_group_interface.setJointValueTarget(move_group_interface.getNamedTargetValues("home"));
 move_group_interface.setPoseTarget(target_pose4);
 success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 move_group_interface.move();
@@ -478,39 +488,168 @@ move_group_interface.move();
 
 if(i==0)
   {
-    waypoints.clear();
-    move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
+    waypoints2.clear();
+    move_group_interface.setPlannerId("PRMkConfigDefault");//Cambiamos el planificador
     move_group_interface.setPoseTarget(posfin1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
     AbrirGripper(client_,node);
+
+    CambiarZPosicion(posfin1);
+
+  waypoints2.push_back(posfin1);
+  CambiarZPosicion(posfin1);
+  waypoints2.push_back(posfin1);
+
+   moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+   my_plan_arm.trajectory_=trajectory2;
+
+   move_group_interface.setPlannerId("RRTstarkConfigDefault");
+   fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+   my_plan_arm.trajectory_=trajectory2;
+
+    if (fraction2 == 1.0)
+    {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory2);
+    }
+    else
+    {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction2<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+    }
+
   }
   else if(i==1)
   {
-    waypoints.clear();
-    move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
-    move_group_interface.setPoseTarget(posfin1);
+    waypoints2.clear();
+    move_group_interface.setPlannerId("PRMkConfigDefault"); //Cambiamos el planificador
+    move_group_interface.setPoseTarget(posfin2);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
     AbrirGripper(client_,node);
+
+    CambiarZPosicion(posfin2);
+
+    waypoints2.push_back(posfin2);
+    CambiarZPosicion(posfin2);
+    waypoints2.push_back(posfin2);
+
+   moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+   my_plan_arm.trajectory_=trajectory2;
+
+move_group_interface.setPlannerId("RRTstarkConfigDefault");
+fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+my_plan_arm.trajectory_=trajectory2;
+
+    if (fraction2 == 1.0)
+    {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory2);
+    }
+    else
+    {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction2<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+    }
   }
   else if(i==2)
   {
-    waypoints.clear();
-    move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
-    move_group_interface.setPoseTarget(posfin1);
+    waypoints2.clear();
+    move_group_interface.setPlannerId("PRMkConfigDefault"); //Cambiamos el planificador
+    move_group_interface.setPoseTarget(posfin3);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
     AbrirGripper(client_,node);
+
+    CambiarZPosicion(posfin3);
+
+    waypoints2.push_back(posfin3);
+    CambiarZPosicion(posfin3);
+    waypoints2.push_back(posfin3);
+
+   moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+   my_plan_arm.trajectory_=trajectory2;
+
+move_group_interface.setPlannerId("RRTstarkConfigDefault");
+fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+my_plan_arm.trajectory_=trajectory2;
+
+    if (fraction2 == 1.0)
+    {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory2);
+    }
+    else
+    {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction2<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+    }
   }
   else if(i==3)
   {
-    waypoints.clear();
-    move_group_interface.setPlannerId("PRMstarkConfigDefault"); //Cambiamos el planificador
-    move_group_interface.setPoseTarget(posfin1);
+    waypoints2.clear();
+    move_group_interface.setPlannerId("PRMkConfigDefault"); //Cambiamos el planificador
+    move_group_interface.setPoseTarget(posfin4);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
     AbrirGripper(client_,node);
+
+    CambiarZPosicion(posfin4);
+
+    waypoints2.push_back(posfin4);
+    CambiarZPosicion(posfin4);
+    waypoints2.push_back(posfin4);
+
+   moveit_msgs::msg::RobotTrajectory trajectory2; //Almacena trayectoria
+   my_plan_arm.trajectory_=trajectory2;
+
+   move_group_interface.setPlannerId("RRTstarkConfigDefault");
+   fraction2 = move_group_interface.computeCartesianPath(waypoints2, eef_step2, jump_threshold2, trajectory2);
+   my_plan_arm.trajectory_=trajectory2;
+
+    if (fraction2 == 1.0)
+    {
+        // Éxito: la trayectoria se calculó correctamente
+        // Hacer algo con la trayectoria resultante
+        // Por ejemplo:
+        std::cout << "Trayectoria calculada exitosamente." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        bool success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+        move_group_interface.execute(trajectory2);
+    }
+    else
+    {
+        // Falla: no se pudo calcular la trayectoria
+        std::cout << "No se pudo calcular la trayectoria." << std::endl;
+        std::cout << "Número de puntos en la trayectoria: " << trajectory2.joint_trajectory.points.size() << std::endl;
+        std::cout <<  "Valor de fraction; "<< fraction2<< std::endl;
+        std::cout << "No se pudo calcular la trayectoria y se acaba el programa." << std::endl;
+    }
   }
 
 
@@ -519,7 +658,7 @@ if(i==0)
 
   if(i<4)
   {
-    move_group_interface.setPlannerId("RRTstarkConfigDefault"); //Cambiamos el planificador
+    move_group_interface.setPlannerId("PRMkConfigDefault"); //Cambiamos el planificador
     move_group_interface.setPoseTarget(target_pose1);
     success = (move_group_interface.plan(my_plan_arm) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group_interface.move();
